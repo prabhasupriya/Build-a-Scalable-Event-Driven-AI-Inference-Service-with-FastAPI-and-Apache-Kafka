@@ -51,7 +51,7 @@ client ──GET /inference/{id}─▶ FastAPI ◀── reads status + result f
 ```bash
 # 1. Clone
 git clone https://github.com/prabhasupriya/Build-a-Scalable-Event-Driven-AI-Inference-Service-with-FastAPI-and-Apache-Kafka.git 
-cd event-driven-ai-inference
+cd Build-a-Scalable-Event-Driven-AI-Inference-Service-with-FastAPI-and-Apache-Kafka
 
 # 2. Configure (optional - every variable has a working default in docker-compose.yml)
 cp .env.example .env
@@ -393,6 +393,12 @@ pip install -r requirements.txt pytest pytest-asyncio httpx
 ---
 
 ## Screenshots / demo
+
+![docker compose ps](docs/screenshots/01-docker-compose-ps.png)
+![POST /inference](docs/screenshots/02-post-inference.png)
+![GET result](docs/screenshots/03-get-result.png)
+![Swagger UI](docs/screenshots/04-swagger-ui.png)
+![Structured logs](docs/screenshots/05-structured-logs.png)
 
 Run `./scripts/demo.sh` against the running stack: it checks health, submits a request, polls
 until `COMPLETED`, and demonstrates the `404`, `422` and `FAILED` paths. Place the captured
