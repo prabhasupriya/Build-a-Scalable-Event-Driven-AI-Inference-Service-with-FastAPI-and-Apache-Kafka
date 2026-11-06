@@ -476,4 +476,4 @@ throughput**. With a 5 s simulated model, one consumer handles ~0.2 requests/s, 
 
 
 ## youtude video
-[watch here]()
+[watch here](https://youtu.be/dDRQumDQ3Ek?si=cgmPIs2_ixLU7qk1)
