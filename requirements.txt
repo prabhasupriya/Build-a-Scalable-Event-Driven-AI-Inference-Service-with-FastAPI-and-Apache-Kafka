@@ -1,0 +1,5 @@
+# Convenience file for local development / running both test suites from the repo root.
+# Each service keeps its own pinned requirements in <service>/requirements.txt
+# (these are what the Docker images install).
+-r api_gateway/requirements.txt
+-r kafka_consumer/requirements.txt

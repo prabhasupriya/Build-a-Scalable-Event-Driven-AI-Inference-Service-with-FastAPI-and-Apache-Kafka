@@ -1,0 +1,237 @@
+{
+  "info": {
+    "name": "Event-Driven AI Inference API",
+    "description": "FastAPI gateway -> Kafka -> consumer -> PostgreSQL. Run 'Submit' first: it stores request_id in a collection variable used by 'Get result'.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "requestId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health"
+          ]
+        },
+        "description": ""
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "pm.test('status ok', () => pm.expect(pm.response.json().status).to.eql('ok'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Submit inference request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/inference",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "inference"
+          ]
+        },
+        "description": "Returns immediately with 202. Inference happens asynchronously in the consumer.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"input_data\": \"A photo of a cat on a sofa\",\n  \"model_id\": \"resnet50\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('202 Accepted', () => pm.response.to.have.status(202));",
+              "const body = pm.response.json();",
+              "pm.test('has request_id and PENDING status', () => { pm.expect(body.request_id).to.be.a('string'); pm.expect(body.status).to.eql('PENDING'); });",
+              "pm.collectionVariables.set('requestId', body.request_id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get result",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/inference/{{requestId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "inference",
+            "{{requestId}}"
+          ]
+        },
+        "description": "Re-send every few seconds until status is COMPLETED (about 5 s with the default simulation)."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "pm.test('valid status', () => pm.expect(['PENDING','PROCESSING','COMPLETED','FAILED']).to.include(pm.response.json().status));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get unknown request (404)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/inference/does-not-exist",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "inference",
+            "does-not-exist"
+          ]
+        },
+        "description": ""
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('404 Not Found', () => pm.response.to.have.status(404));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Invalid payload (422)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/inference",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "inference"
+          ]
+        },
+        "description": "",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"input_data\": \"\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('422 Unprocessable Entity', () => pm.response.to.have.status(422));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Failing inference (FAILED)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/inference",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "inference"
+          ]
+        },
+        "description": "Inputs containing the failure marker make the simulated model fail; use 'Get result' afterwards to see status FAILED.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"input_data\": \"please __fail__ this one\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('202 Accepted', () => pm.response.to.have.status(202));",
+              "pm.collectionVariables.set('requestId', pm.response.json().request_id);"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
